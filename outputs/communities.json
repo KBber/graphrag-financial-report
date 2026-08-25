@@ -1,0 +1,384 @@
+[
+  {
+    "community_id": 0,
+    "size": 42,
+    "key_entities": [
+      {
+        "name": "海康威视",
+        "type": "Company"
+      },
+      {
+        "name": "境外营业收入22335000000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "境内营业收入67005000000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入占营业收入比例0.84%",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入7.47亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "其他业务收入4467000000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "主营业务收入84873000000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "归属于上市公司股东的净利润141.18亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入893.40亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "境外营业收入20791500000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "境内营业收入62374500000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入占营业收入比例1.40%",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入11.62亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "归属于上市公司股东的净利润128.37亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "经营性现金流17971800000.00元",
+        "type": "Indicator"
+      }
+    ],
+    "summary": "该社区围绕海康威视的财务与经营状况展开，核心关系涵盖境内外收入、研发投入、净利润及现金流等关键指标，反映公司整体业绩表现与投入产出结构。"
+  },
+  {
+    "community_id": 1,
+    "size": 40,
+    "key_entities": [
+      {
+        "name": "五粮液",
+        "type": "Company"
+      },
+      {
+        "name": "营业收入20818000000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入62454000000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入占营业收入比例1.03%",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入8.57亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "其他业务收入4163600000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "主营业务收入79108400000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "净利润315.16亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "经营性现金流441.22亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "扣非净利润289.95亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "归母净利润315.16亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "归属于上市公司股东的净利润315.16亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入832.72亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "境外营业收入18492250000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "境内营业收入55476750000.00元",
+        "type": "Indicator"
+      }
+    ],
+    "summary": "该社区围绕五粮液公司展开，核心主题是其财务业绩与经营指标，涵盖营收、净利润、现金流及研发投入等关键数据，反映公司整体运营状况。"
+  },
+  {
+    "community_id": 2,
+    "size": 38,
+    "key_entities": [
+      {
+        "name": "宁德时代",
+        "type": "Company"
+      },
+      {
+        "name": "境外",
+        "type": "Region"
+      },
+      {
+        "name": "研发投入占营业收入比例4.05%",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入162.40亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "其他业务收入20045850000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "主营业务收入380871150000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "净利润441.21亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "经营性现金流61769400000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "扣非净利润40591320000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "归母净利润44121000000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入400917000000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "归属于上市公司股东的净利润441.21亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入4009.17亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入占营业收入比例4.72%",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入154.98亿元",
+        "type": "Indicator"
+      }
+    ],
+    "summary": "该社区围绕宁德时代展开，聚焦其财务与研发指标，涵盖营收、净利润、现金流及研发投入等关键数据，并涉及境外业务，反映公司经营与创新投入状况。"
+  },
+  {
+    "community_id": 3,
+    "size": 38,
+    "key_entities": [
+      {
+        "name": "贵州茅台",
+        "type": "Company"
+      },
+      {
+        "name": "研发投入占营业收入比例3.96%",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入59.61亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "其他业务收入7527750000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "主营业务收入143027250000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "经营性现金流1046.28亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "扣非净利润687.55亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "归母净利润747.34亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "归属于上市公司股东的净利润747.34亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入1505.55亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入31024750000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入93074250000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入占营业收入比例1.69%",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入21.02亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "其他业务收入6204950000.00元",
+        "type": "Indicator"
+      }
+    ],
+    "summary": "该社区围绕贵州茅台展开，聚焦其财务表现，涵盖营收、利润、现金流及研发投入等关键指标，反映公司经营状况与研发强度。"
+  },
+  {
+    "community_id": 4,
+    "size": 37,
+    "key_entities": [
+      {
+        "name": "中国平安",
+        "type": "Company"
+      },
+      {
+        "name": "境内",
+        "type": "Region"
+      },
+      {
+        "name": "境外营业收入228358500000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "境内营业收入685075500000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入占营业收入比例3.45%",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入315.26亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "经营性现金流119931000000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "扣非净利润78811800000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "归母净利润85665000000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入913434000000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "归属于上市公司股东的净利润856.65亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入9134.34亿元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入224741500000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入674224500000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "研发投入占营业收入比例1.27%",
+        "type": "Indicator"
+      }
+    ],
+    "summary": "该社区围绕中国平安的财务表现展开，涵盖境内外营收、研发投入、现金流及净利润等关键指标，反映其经营规模与盈利状况。"
+  },
+  {
+    "community_id": 5,
+    "size": 10,
+    "key_entities": [
+      {
+        "name": "002415",
+        "type": "Company"
+      },
+      {
+        "name": "张某",
+        "type": "Person"
+      },
+      {
+        "name": "李某",
+        "type": "Person"
+      },
+      {
+        "name": "王某",
+        "type": "Person"
+      },
+      {
+        "name": "赵某",
+        "type": "Person"
+      },
+      {
+        "name": "陈宗年",
+        "type": "Person"
+      },
+      {
+        "name": "经营性现金流19765200000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "扣非净利润12988560000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "归母净利润14118000000.00元",
+        "type": "Indicator"
+      },
+      {
+        "name": "营业收入89340000000.00元",
+        "type": "Indicator"
+      }
+    ],
+    "summary": "该社区围绕上市公司002415展开，核心人物包括张某、李某、王某、赵某及陈宗年，关联其财务指标如营收893.4亿、归母净利润141.18亿等，主题为公司经营业绩与关键人员关系。"
+  }
+]

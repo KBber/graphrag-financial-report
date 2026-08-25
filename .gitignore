@@ -1,0 +1,40 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+
+# ── Virtualenvs / toolchains ──
+.venv/
+venv/
+.env
+
+# ── Editor / OS ──
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.bak
+
+# ── Logs & caches ──
+*.log
+.cache/
+__pycache__/
+
+# ── Neo4j (local dev only) ──
+neo4j-community-*/
+neo4j-enterprise-*/
+
+# ── Output artefacts that can be reproduced ──
+# Uncomment if you do not want to ship the precomputed outputs.
+# outputs/triples.jsonl
+# outputs/communities.json
+# outputs/eval_compare.json
+
+# ── Data: not in this repo (re-supply your own) ──
+data/parsed/
