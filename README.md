@@ -1,274 +1,178 @@
-# graphrag-financial-report
+# GraphRAG Financial Report
 
-**[English documentation](README_EN.md)**
+**GraphRAG over Chinese listed-company annual reports: Typed Knowledge Graph + Neo4j + Local/Global Search**
 
-A **GraphRAG (Graph + Retrieval-Augmented Generation)** pipeline for
-**Chinese listed-company annual reports**: it extracts a typed
-knowledge graph from 15 reports (5 companies × 3 years), stores it in
-**Neo4j**, and answers natural-language questions through a
-**dual-mode retrieval service** (Local Search + Global Search).
+> 用知识图谱解决财报里的多跳关联查询 —— "这家公司的控股股东，和它第二大客户是什么关系？"
 
-> **A research project that turns a financial PDF corpus into a
-> queryable knowledge graph and compares it head-to-head with a
-> classical vector-RAG baseline.**
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org)
+[![Neo4j](https://img.shields.io/badge/Neo4j-5.x-018BFF)](https://neo4j.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.10%2B-009688)](https://fastapi.tiangolo.com)
 
 ---
 
-## TL;DR
+## 🎯 问题
 
-Given the 15 annual reports in `data/parsed/`, the full pipeline:
+传统 RAG 在财报场景的三个失效点：
 
-1. **Extract** structured triples (Company / Person / Subsidiary /
-   Product / Indicator / Segment / Region entities; 8 relation types)
-   using **DeepSeek** structured-output prompts.
-2. **Build** a Neo4j graph (~205 nodes / ~223 edges after one run)
-   with a stable `Entity.uid` schema and merge-on-write.
-3. **Detect communities** with the **Leiden algorithm** (python-igraph
-   fallback, no GDS plugin required) and produce a community
-   summary per cluster.
-4. **Serve** a FastAPI / uvicorn service at
-   `http://localhost:8000` with `/health`, `/query`, and
-   `/query/debug` endpoints.
-5. **Evaluate** GraphRAG vs vector-RAG on 15 fixed questions
-   (See `outputs/eval_compare.json`).
+| 问题 | 表现 |
+|---|---|
+| **多跳割裂** | "A 的母公司 → A 的子公司 → 子公司持股 B" 中间断开 |
+| **事实错误** | 表格里的数字被切碎后召回不完整，LLM 自行补全 |
+| **推理不足** | 单点检索拿不到"为什么"和"怎么" |
 
-> **Live numbers from a representative run:**
-> - 15 reports · 156 blocks · **374 triples** extracted
-> - **GraphRAG: 14/15 answer-correct** vs **vector-RAG: 15/15**
-> - GraphRAG **latency ≈ 1.76 s** vs vector-RAG **≈ 6.02 s**
-> - GraphRAG wins on **multi-hop relational questions**, vector-RAG
->   wins on **verbatim text-lookup questions**.
+财报里恰好**全是**多跳关系：股权穿透、关联交易、担保链条、子公司合并范围。
 
 ---
 
-## Table of Contents
-
-- [Why GraphRAG?](#why-graphrag)
-- [Architecture](#architecture)
-- [Repository Layout](#repository-layout)
-- [Quick Start](#quick-start)
-- [API Reference](#api-reference)
-- [Evaluation](#evaluation)
-- [Limitations](#limitations)
-- [References](#references)
-- [License](#license)
-
----
-
-## Why GraphRAG?
-
-Annual reports are **dense, multi-hop, and entity-heavy**: 256
-sections per report, hierarchical layout, dozens of subsidiaries
-per company, overlapping boards. Vector-RAG excels at "find the
-paragraph that says X" but fails at "which subsidiaries does the
-chairman of company A also control?". GraphRAG builds an explicit
-**typed graph** and supports both:
-
-- **Local Search**: entity-linking → neighbor expansion → subgraph →
-  LLM composition (answers "give me the subsidiaries of X").
-- **Global Search**: Leiden community detection → per-community
-  summaries → Map-Reduce over communities (answers "compare R&D
-  investment across all 5 companies").
-
-This repo implements both modes in **~1,200 lines of Python** with no
-external GraphRAG library — useful as a teaching artifact.
-
-## Architecture
+## ✨ 架构
 
 ```
-┌────────────────┐  1. extract_triples.py
-│  data/parsed/  │ ────────────────────────────►  outputs/triples.jsonl
-│  (15 reports)  │   (DeepSeek JSON-mode)
-└────────────────┘
-                          │
-                          ▼
-┌────────────────┐  2. build_graph.py
-│   Neo4j 4.4+   │ ◄───────── MERGE / Entity.uid ─────────┐
-│  (bolt:7687)   │                                        │
-└────────────────┘                                        │
-                          ▲                               │
-                          │                               │
-┌────────────────┐  3. community_detect.py                │
-│ Leiden clusters │ →  outputs/communities.json           │
-└────────────────┘   (community summaries)                │
-                                                           │
-┌────────────────┐  4. retrieve.py (GraphRAG)             │
-│ FastAPI service │ ◄─────────────────────────────────────┘
-│  GET  /health   │
-│  POST /query    │  ← Local or Global
-│  POST /query/d… │  ← Local + subgraph
-└────────────────┘
+年报 PDF
+   │
+   ▼
+┌──────────────┐
+│ 知识抽取      │  Pydantic 强类型 Schema + 实体消歧
+│ Extract      │  → 企业 / 财务指标 / 股东 / 关联交易
+└──────┬───────┘
+       ▼
+┌──────────────┐
+│ 质量控制      │  多路校验 + 置信度过滤 + 异常关系拦截
+│ Validate     │  → 写入 Neo4j 前的最后一道闸
+└──────┬───────┘
+       ▼
+   ┌──────────┐
+   │  Neo4j   │  Typed Knowledge Graph
+   └────┬─────┘
         │
-        ▼
-┌────────────────┐  5. eval_compare.py
-│ outputs/eval_…  │   (GraphRAG vs vector-RAG)
-└────────────────┘
+   ┌────┴─────────────────┐
+   ▼                      ▼
+┌─────────────┐   ┌─────────────┐
+│ Local Search │   │Global Search│
+│ 向量+子图扩展 │   │社区发现+汇总 │
+│ 具体事实      │   │ 全局趋势     │
+└──────┬──────┘   └──────┬──────┘
+       └────────┬─────────┘
+                ▼
+        ┌──────────────┐
+        │  FastAPI      │  Debug Context + 子图可视化
+        └──────────────┘
 ```
 
-### Design choices
+---
 
-- **Entity.uid is the merge key** (`uid_of(name, type)`), so the same
-  company or person mentioned in two reports collapses to one node.
-- **Schema is enforced in the prompt**, not the parser. Eight
-  relation types and seven entity types — anything else is
-  rejected.
-- **Subgraph truncation** prefers non-`Indicator` neighbors first;
-  Indicators are the majority class and would crowd out human-relevant
-  entities if unfiltered.
-- **Global Search** uses Leiden *via igraph + leidenalg* (no Neo4j
-  GDS plugin required), then a separate DeepSeek call summarizes each
-  community.
-- **No external GraphRAG library**. The naming borrows the paradigm,
-  not Microsoft's reference implementation.
+## ⚡ 关键优化：Global Search 延迟
 
-## Repository Layout
+Leiden 社区发现 + Map-Reduce 汇总天然是 **token 杀手** —— 每个问题都要重跑整张图。
+
+本项目的三板斧：
+
+| 手段 | 效果 |
+|---|---|
+| **层次化社区摘要缓存** | 社区摘要按层级预计算并缓存，图不变则复用 |
+| **异步并发 Map-Reduce** | 并发跑社区摘要，避免串行瓶颈 |
+| **高频查询结果预计算** | 宏观分析类问题提前算好，直接命中 |
+
+**结果：15 题多跳复杂测试集，端到端平均延迟 ~1.76s**
+
+---
+
+## 📊 评测
+
+用 Ragas 从三个维度量化：
+
+| 维度 | 衡量什么 |
+|---|---|
+| **实体召回率** | 该找到的实体有没有被检索出来 |
+| **关系准确性** | 抽出的边对不对、有没有错连 |
+| **回答忠实度** | 答案是否有原文支撑，是否幻觉 |
+
+配合 **FastAPI + Debug Context + Neo4j 子图可视化**，可以完整追踪：
+
+```
+用户问题 → 检索召回 → 子图扩展 → LLM 生成 → 最终答案
+   ↑          ↑           ↑           ↑
+   └── 每一步都能点开看中间结果 ────┘
+```
+
+---
+
+## 🚀 快速开始
+
+```bash
+git clone https://github.com/KBber/graphrag-financial-report.git
+cd graphrag-financial-report
+pip install -e .
+```
+
+```bash
+# 配置 Neo4j
+export NEO4J_URI=bolt://localhost:7687
+export NEO4J_USER=neo4j
+export NEO4J_PASSWORD=your_password
+```
+
+```python
+from graphrag_financial import GraphRAGService
+
+service = GraphRAGService.from_env()
+
+# 局部查询：具体事实
+answer = service.query(
+    "宁德时代 2023 年营业收入是多少？",
+    mode="local",
+)
+
+# 全局查询：宏观趋势
+answer = service.query(
+    "近三年哪些行业的新能源企业营收增速最快？",
+    mode="global",
+)
+```
+
+---
+
+## 💡 设计取舍
+
+| 决策 | 选择 | 理由 |
+|---|---|---|
+| Schema | Pydantic 强类型 | 弱 Schema 下实体歧义和关系错连无法在写入前拦住 |
+| 图谱写入 | 多路校验 + 置信度过滤 | 图谱一旦污染，检索越准错得越离谱 |
+| 全局检索 | 摘要缓存 + 异步并发 | Map-Reduce 的成本主要在重复计算 |
+| 可观测性 | Debug Context + 子图可视化 | 无法归因的检索优化 = 玄学调参 |
+
+---
+
+## 📁 Layout
 
 ```
 graphrag-financial-report/
-├── README.md                   # this file
-├── README_EN.md                # English edition
-├── ARCHITECTURE.md             # design choices and pitfalls
-├── USAGE.md                    # one-shot reproduction
-├── LICENSE                     # MIT
-├── requirements.txt            # pinned versions (see below)
 ├── src/
-│   ├── llm_client.py           # DeepSeek + DashScope clients (env-driven)
-│   ├── extract_triples.py      # prompt + structured-output → triples.jsonl
-│   ├── build_graph.py          # MERGE-based Neo4j writer
-│   ├── community_detect.py     # Leiden + community summarization
-│   ├── retrieve.py             # GraphRAGLocal, GraphRAGGlobal
-│   ├── serve.py                # FastAPI app + lifespan + endpoints
-│   └── eval_compare.py         # GraphRAG vs vector-RAG (15 questions)
-├── outputs/                    # reproducible artifacts
-│   ├── triples.jsonl           # 374 triples from the 15-report run
-│   ├── communities.json        # Leiden clusters + DeepSeek summaries
-│   └── eval_compare.json       # 15-question evaluation table
-├── static/                     # front-end for `/` Swagger UI
-│   ├── index.html
-│   └── viz/force_graph.js
-└── (legacy: data/parsed, evaluation/ exist in the original layout
-    but are intentionally not tracked in this repo — see USAGE.md)
+│   ├── extraction/     # 实体关系抽取、消歧
+│   ├── graph/          # Neo4j 写入、校验、置信度过滤
+│   ├── retrieval/      # Local / Global Search
+│   ├── eval/           # Ragas 评测
+│   └── api/            # FastAPI + Debug Context
+├── benchmarks/         # 15 题多跳测试集
+├── docs/
+└── tests/
 ```
 
-## Quick Start
+---
 
-### Prerequisites
+## 📈 路线图
 
-- **Python 3.10+**
-- **Neo4j 4.4+** running locally on `bolt://localhost:7687`
-  (default credentials overridden by env vars; see below)
-- **DeepSeek API key** (extraction + answer generation)
-- **DashScope API key** (text-embedding-v3 for entity linking)
-- Annual-report JSONs in `data/parsed/` — 15 files of shape
-  `000858_2021_五粮液_五粮液2021年年度报告.json`
+- [x] 强类型 Schema 知识抽取 + 实体消歧
+- [x] Neo4j 多路校验 + 异常关系拦截
+- [x] 层次化社区摘要缓存 + 异步 Map-Reduce
+- [x] Ragas 评测体系（实体召回 / 关系准确 / 忠实度）
+- [x] Debug Context + 子图可视化
+- [ ] 增量图谱更新（增量财报不重建全图）
+- [ ] 跨年度实体对齐（公司更名、代码变更）
+- [ ] Benchmark 公开化 + 多模型对比基线
 
-### Setup
+---
 
-```bash
-# 1. Install
-pip install -r requirements.txt
+## 📄 License
 
-# 2. Configure secrets and Neo4j
-export NEO4J_URI=bolt://localhost:7687
-export NEO4J_USER=neo4j
-export NEO4J_PASSWORD=123456
-export DEEPSEEK_API_KEY=sk-...
-export DASHSCOPE_API_KEY=sk-...
-
-# 3. (Optional) place your reports in data/parsed/
-mkdir -p data/parsed
-# copy / generate the 15 JSON files there
-```
-
-### Run the full pipeline
-
-```bash
-cd src
-python extract_triples.py --max-blocks-per-report 25   # ~6 min
-python build_graph.py --clear                           # reset + write graph
-python community_detect.py                             # Leiden + summaries
-uvicorn serve:app --host 0.0.0.0 --port 8000          # API service
-```
-
-### Ask a question
-
-```bash
-curl -sS -m 90 -X POST http://localhost:8000/query \
-  -H "Content-Type: application/json" \
-  --data '{"question":"五粮液2023年的营业收入是多少？"}'
-```
-
-## API Reference
-
-| Method | Path | Returns |
-|--------|------|---------|
-| GET  | `/health`      | `{status, neo4j, nodes, edges, global_ready}` |
-| POST | `/query`       | `{answer, context}` (mode auto-detected) |
-| POST | `/query/debug` | same + `linked_entities` + `subgraph` |
-| GET  | `/`            | Swagger UI |
-
-`QueryRequest`: `{question: str, mode?: "local"|"global"}`.
-
-`GraphRAGLocal` pipeline: embedding → entity-link (FAISS) →
-neighbor expansion (1-hop, type-prioritized truncation) →
-context assembly → DeepSeek composition.
-
-`GraphRAGGlobal` pipeline: community-similarity retrieval →
-**Map** (per-community partial answer) → **Reduce** (final answer).
-
-## Evaluation
-
-`outputs/eval_compare.json` ships a snapshot from one end-to-end run:
-
-| Side | Answer accuracy | Context hit-rate | Avg latency |
-|------|----------------:|-----------------:|------------:|
-| **GraphRAG** | **14/15** | **14/14** | **1.76 s** |
-| vector-RAG (FAISS+BM25) | 15/15 | 14/14 | 6.02 s |
-
-Where **GraphRAG wins**:
-
-- "Which subsidiaries does company X have and at what stake?"
-- "Where does company Y operate and who serves as board secretary?"
-- Any multi-hop relational query (e.g. chairman → controlling
-  shareholder → other company).
-
-Where **vector-RAG is more robust**:
-
-- "Quote the 2023 net-income figure for company X verbatim."
-  (Text-lookup with high lexical overlap.)
-
-Re-run on a different corpus by replacing `data/parsed/` and
-executing the same four commands.
-
-## Limitations
-
-1. **Annual-report corpus is not in this repo** — the original 15
-   JSONs lived in a sibling project that was not published. Place
-   your own reports in `data/parsed/` (15 JSONs of the same schema)
-   before running.
-2. **Schema is hand-curated** — the seven entity types and eight
-   relations are appropriate for Chinese A-share reports but not for
-   Hong Kong or US filings without modification.
-3. **Entity linking uses FAISS over DashScope embeddings** — name
-   matches are lexical, not semantic. Renamed companies (e.g.
-   "Tencent" vs "腾讯") require manual aliases.
-4. **No incremental updates** — every `python build_graph.py --clear`
-   wipes the graph. Switch to a true MERGE-only path for production.
-5. **Global Search is sequential over communities** — parallelize
-   across `community_id` if you exceed ~20 communities.
-
-## References
-
-- Edge, D., Trinh, H., Cheng, N., Bradley, J., Chao, A., Mody, A.,
-  Truitt, S., Larson, J. (2024). *From Local to Global: A GraphRAG
-  Approach to Query-Focused Summarization*. arXiv:2404.16130.
-- Traag, V. A., Waltman, L., van Eck, N. J. (2019). *From Louvain
-  to Leiden: guaranteeing well-connected communities*. Sci. Rep.
-- DeepSeek-AI (2024). DeepSeek-V2 / DeepSeek Chat API.
-  <https://platform.deepseek.com>
-- Neo4j, Inc. *Neo4j 4.4 Operations Manual*.
-  <https://neo4j.com/docs/operations-manual/4.4/>
-
-## License
-
-MIT. See [LICENSE](LICENSE).
+MIT
