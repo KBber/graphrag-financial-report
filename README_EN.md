@@ -128,17 +128,16 @@ pip install -r requirements.txt
 
 # Environment
 export NEO4J_URI=bolt://localhost:7687
-export NEO4J_USER=neo4j
-export NEO4J_PASSWORD=123456
+export NEO4J_PASSWORD=your_local_neo4j_password
 export DEEPSEEK_API_KEY=sk-...
 export DASHSCOPE_API_KEY=sk-...
 
 # Place 15 annual-report JSONs in data/parsed/ and run:
 cd src
 python extract_triples.py --max-blocks-per-report 25
-python build_graph.py --clear
+python build_graph.py
 python community_detect.py
-uvicorn serve:app --host 0.0.0.0 --port 8000
+uvicorn serve:app --host 127.0.0.1 --port 8000
 
 # Query
 curl -X POST http://localhost:8000/query \
@@ -150,15 +149,23 @@ curl -X POST http://localhost:8000/query \
 
 ```
 graphrag-financial-report/
-├── README.md                   # Chinese narrative
-├── README_EN.md                # this file
-├── ARCHITECTURE.md             # design + pitfalls
-├── USAGE.md                    # one-shot reproduction
-├── LICENSE                     # MIT
+├── .github/workflows/ci.yml
+├── .env.example
+├── AGENTS.md
+├── ARCHITECTURE.md
+├── USAGE.md
 ├── requirements.txt
-├── src/                        # ~1200 LOC across 7 files
-├── outputs/                    # triples, communities, evaluation
-└── static/                     # Swagger UI
+├── src/
+│   ├── extract_triples.py     # Extraction
+│   ├── build_graph.py         # Neo4j ingestion
+│   ├── community_detect.py    # Communities and summaries
+│   ├── retrieve.py            # Local and global retrieval
+│   ├── llm_client.py          # Model clients
+│   ├── serve.py               # FastAPI
+│   └── eval_compare.py        # Evaluation
+├── tests/
+├── outputs/                   # Published evaluation and graph snapshots
+└── static/                    # Debug UI
 ```
 
 ## 8. Limitations
