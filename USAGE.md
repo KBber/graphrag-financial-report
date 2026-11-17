@@ -32,15 +32,14 @@ Key dependencies (full list in `requirements.txt`):
 
 ```bash
 export NEO4J_URI=bolt://localhost:7687
-export NEO4J_USER=neo4j
-export NEO4J_PASSWORD=123456   # default; override as needed
+export NEO4J_PASSWORD=your_local_neo4j_password
 export DEEPSEEK_API_KEY=sk-...
 export DASHSCOPE_API_KEY=sk-...
 ```
 
-The Python sources read these via `os.getenv(...)` and `os.getenv(..., default)`.
-The default password is `123456` for local development; change it
-before publishing.
+Use a dedicated local Neo4j instance with the `neo4j` user. The scripts
+read the process environment. [.env.example](.env.example) lists the
+variables for reference. On PowerShell, use `$env:NAME = 'value'`.
 
 ## 3. Prepare input
 
@@ -64,14 +63,14 @@ cd src
 # 4.1 Triple extraction (~6 min for 15 reports × 25 blocks each)
 python extract_triples.py --max-blocks-per-report 25
 
-# 4.2 Ingest to Neo4j (--clear wipes existing graph)
-python build_graph.py --clear
+# 4.2 Ingest to a dedicated local Neo4j instance
+python build_graph.py
 
 # 4.3 Leiden community detection + DeepSeek summary
 python community_detect.py
 
 # 4.4 Start the API service
-uvicorn serve:app --host 0.0.0.0 --port 8000
+uvicorn serve:app --host 127.0.0.1 --port 8000
 ```
 
 ## 5. Try the API
@@ -113,15 +112,17 @@ dependency is missing — only GraphRAG is required.
 |---------|--------------|-----|
 | `Neo.ClientError.Security.CredentialsExpired` | First-run password reset | In Neo4j Browser, set a new password for `neo4j` and update `NEO4J_PASSWORD` |
 | `EnvironmentError: 请设置环境变量 DEEPSEEK_API_KEY` | Missing key | `export DEEPSEEK_API_KEY=sk-...` |
-| `graphrag` answers empty for valid questions | `data/parsed` was not loaded or triples weren't ingested | Re-run `extract_triples.py` then `build_graph.py --clear` |
+| `graphrag` answers empty for valid questions | `data/parsed` was not loaded or triples weren't ingested | Re-run `extract_triples.py` then `build_graph.py` |
 | `ModuleNotFoundError: igraph` | install dropped | `pip install igraph==0.11.* leidenalg==0.10.*` |
 
-## 8. Repro from shipped artifacts (no API keys)
+## 8. Reuse the published artifacts
 
-If you only want the FastAPI service against the in-graph data, you can
-skip the extraction step. `outputs/triples.jsonl` and
-`outputs/communities.json` are reproducible artifacts; running
-`python build_graph.py --clear` from inside `src/` will re-ingest
-those triples into Neo4j and `python community_detect.py` will rebuild
-the community summaries, with only the DeepSeek and DashScope keys
-required for the rebuild.
+Run `python build_graph.py` from `src/` to load `outputs/triples.jsonl`
+into a dedicated local Neo4j instance without calling a model. The source
+annual-report JSON files are needed only when re-running extraction.
+The API still needs DashScope for entity linking and DeepSeek for answer
+generation. Run `python community_detect.py` to regenerate community
+summaries if you change the graph.
+
+`build_graph.py --clear` deletes the existing graph. Use it only when
+resetting a disposable development database.

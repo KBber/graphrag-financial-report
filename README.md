@@ -102,33 +102,20 @@ Leiden 社区发现 + Map-Reduce 汇总天然是 **token 杀手** —— 每个�
 ```bash
 git clone https://github.com/KBber/graphrag-financial-report.git
 cd graphrag-financial-report
-pip install -e .
+python -m pip install -r requirements.txt
 ```
+
+按 [运行指南](USAGE.md) 启动本地 Neo4j，并参照 [.env.example](.env.example)
+配置环境变量。已有发布的三元组可直接导入专用的开发数据库。
 
 ```bash
-# 配置 Neo4j
-export NEO4J_URI=bolt://localhost:7687
-export NEO4J_USER=neo4j
-export NEO4J_PASSWORD=your_password
+cd src
+python build_graph.py
+python -m uvicorn serve:app --host 127.0.0.1 --port 8000
 ```
 
-```python
-from graphrag_financial import GraphRAGService
-
-service = GraphRAGService.from_env()
-
-# 局部查询：具体事实
-answer = service.query(
-    "宁德时代 2023 年营业收入是多少？",
-    mode="local",
-)
-
-# 全局查询：宏观趋势
-answer = service.query(
-    "近三年哪些行业的新能源企业营收增速最快？",
-    mode="global",
-)
-```
+打开 `http://127.0.0.1:8000/docs`，用 `POST /query` 提交问题，例如
+`{"question":"宁德时代 2023 年营业收入是多少？","mode":"local"}`。
 
 ---
 
@@ -147,15 +134,23 @@ answer = service.query(
 
 ```
 graphrag-financial-report/
+├── .github/workflows/ci.yml
+├── .env.example
+├── AGENTS.md
+├── ARCHITECTURE.md
+├── USAGE.md
+├── requirements.txt
 ├── src/
-│   ├── extraction/     # 实体关系抽取、消歧
-│   ├── graph/          # Neo4j 写入、校验、置信度过滤
-│   ├── retrieval/      # Local / Global Search
-│   ├── eval/           # Ragas 评测
-│   └── api/            # FastAPI + Debug Context
-├── benchmarks/         # 15 题多跳测试集
-├── docs/
-└── tests/
+│   ├── extract_triples.py     # Extraction
+│   ├── build_graph.py         # Neo4j ingestion
+│   ├── community_detect.py    # Communities and summaries
+│   ├── retrieve.py            # Local and global retrieval
+│   ├── llm_client.py          # Model clients
+│   ├── serve.py               # FastAPI
+│   └── eval_compare.py        # Evaluation
+├── tests/
+├── outputs/                   # Published evaluation and graph snapshots
+└── static/                    # Debug UI
 ```
 
 ---
